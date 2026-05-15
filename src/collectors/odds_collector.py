@@ -28,6 +28,7 @@ def get_odds_data(sport="americanfootball_nfl"):
     return response.json()
 
 def display_odds(events):
+    betting_objects = []
 
     for event in events:
 
@@ -53,9 +54,15 @@ def display_odds(events):
                         odds=outcome['price'],
                         implied_probability=probability
                     )
+                    betting_objects.append(betting_object)
                     print(betting_object)
+
+    return betting_objects
 
 if __name__ == "__main__":
     odds_data = get_odds_data()
-    display_odds(odds_data)
+    all_bets = display_odds(odds_data)
+
+    print()
+    print(f"Total Betting Objects Created: {len(all_bets)}")
 
