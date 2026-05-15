@@ -1,4 +1,5 @@
 from src.database.db import fetch_all_betting_odds
+SPORT_FILTER = "baseball_mlb"
 
 def analyze_line_movement():
     rows = fetch_all_betting_odds()
@@ -13,10 +14,14 @@ def analyze_line_movement():
 
     for row in rows:
         run_id = row[1]
-        event = row[2]
-        sportsbook = row[3]
-        team = row[4]
-        odds = row[5]
+        sport = row[2]
+        event = row[3]
+        sportsbook = row[4]
+        team = row[5]
+        odds = row[6]
+        if sport != SPORT_FILTER:
+            continue
+        
 
         key = (event, sportsbook, team)
 
