@@ -21,7 +21,7 @@ def analyze_line_movement():
         odds = row[6]
         if sport != SPORT_FILTER:
             continue
-        
+
 
         key = (event, sportsbook, team)
 
@@ -41,6 +41,8 @@ def analyze_line_movement():
             previous_odds = history[-2][1]
             latest_odds = history[-1][1]
 
+            movement = latest_odds - previous_odds
+
             if previous_odds != latest_odds:
                 event, sportsbook, team = key
 
@@ -50,6 +52,7 @@ def analyze_line_movement():
                 print(f"Sportsbook: {sportsbook}")
                 print(f"Opening Odds: {previous_odds}")
                 print(f"Latest Odds: {latest_odds}")
+                print(f"Movement: {movement:+}")
 
 if __name__ == "__main__":
     analyze_line_movement()
