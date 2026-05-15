@@ -1,4 +1,5 @@
 def create_betting_object(
+        sport,
         event_name,
         sportsbook,
         team,
@@ -6,6 +7,7 @@ def create_betting_object(
         implied_probability
 ):
     return {
+        "sport": sport,
         "event": event_name,
         "sportsbook": sportsbook,
         "team": team,
