@@ -24,6 +24,32 @@ def create_tables():
     connection.commit()
     connection.close()
 
+def insert_betting_odds(betting_objects):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    for bet in betting_objects:
+        cursor.execute('''
+            INSERT INTO betting_odds (event, sportsbook, team, odds, implied_probability)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (bet['event'], bet['sportsbook'], bet['team'], bet['odds'], bet['implied_probability']))
+
+    connection.commit()
+    connection.close()
+
+def fetch_all_betting_odds():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('SELECT * FROM betting_odds')
+    rows = cursor.fetchall()
+
+    connection.close()
+    return rows
+
 if __name__ == "__main__":
-    create_tables()
-    print("Database and tables created successfully.")
+    rows = fetch_all_betting_odds()
+    for row in rows[:10]:
+        print(row)
+    print()
+    print(f"Total Rows: {len(rows)}")

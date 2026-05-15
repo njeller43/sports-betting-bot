@@ -4,6 +4,7 @@ import requests
 from dotenv import load_dotenv
 from src.analysis.implied_probability import american_odds_to_probability
 from src.analysis.betting_objects import create_betting_object
+from src.database.db import create_tables, insert_betting_odds
 
 load_dotenv()
 
@@ -60,9 +61,13 @@ def display_odds(events):
     return betting_objects
 
 if __name__ == "__main__":
+    create_tables()
+
     odds_data = get_odds_data()
     all_bets = display_odds(odds_data)
+    insert_betting_odds(all_bets)
 
     print()
-    print(f"Total Betting Objects Created: {len(all_bets)}")
+    print(f"Total bets collected and stored: {len(all_bets)}")
+    print("Betting odds saved to database successfully.")
 
