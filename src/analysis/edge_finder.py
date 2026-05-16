@@ -4,6 +4,7 @@ from src.collectors.mlb_stats_collector import (
     get_recent_games,
     calculate_streak,
 )
+from src.database.save_edge_reports import save_edge_report
 
 
 def is_better_odds(new_odds, current_odds):
@@ -23,6 +24,8 @@ def find_edges():
     odds_data = get_odds_data("baseball_mlb")
     recent_games = get_recent_games()
     trends = calculate_team_trends(recent_games)
+
+    edge_reports = []
 
     for event in odds_data:
         home_team = event["home_team"]
@@ -90,25 +93,87 @@ def find_edges():
 
             streak = calculate_streak(stats["results"])
 
-            print()
-            print(f"Team: {team}")
-            print(f"Best Odds: {odds} ({sportsbook})")
-            print("Sportsbook Lines:")
-            for line in team_lines:
-                print(f"  {line['sportsbook']}: {line['odds']}")
-            print(f"Line Difference: {line_difference:+}")
-            print(f"Record: {stats['wins']}-{stats['losses']}")
-            print(f"Run Differential: {run_diff:+}")
-            print(f"Trend Score: {trend_score:+.1f}")
-            print(f"Edge Score: {edge_score:+.2f}")
-
             if edge_score >= 2:
-                print("Signal: Potential Value Bet")
+                signal = "Potential Value Bet"
             elif edge_score <= -2:
-                print("Signal: Potential Avoidance")
+                signal = "Avoid / Cold Team"
             else:
-                print("Signal: Neutral")
-            print(f"Current Streak: {streak}")
+                signal = "Neutral"
+
+            edge_reports.append({
+                "event": f"{away_team} vs {home_team}",
+                "team": team,
+                "odds": odds,
+                "sportsbook": sportsbook,
+                "team_lines": team_lines,
+                "line_difference": line_difference,
+                "record" : f"{stats['wins']}-{stats['losses']}",
+                "run_diff": run_diff,
+                "trend_score": trend_score,
+                "edge_score": edge_score,
+                "streak": streak,
+                "signal": signal
+            })
+
+            
+    edge_reports.sort(
+        key=lambda report: report["edge_score"],
+        reverse=True
+    )
+
+    print()
+    print("=" * 60)
+    print("TOP EDGE REPORT")
+    print("=" * 60)
+
+    for report in edge_reports:
+        save_edge_report(report)
+        print()
+        print(report["event"])
+
+        print(f"Team: {report['team']}")
+        print(
+            f"Best Odds: "
+            f"{report['odds']} "
+            f"({report['sportsbook']})"
+        )
+
+        print("Sportsbook Lines:")
+
+        for line in report["team_lines"]:
+            print(
+                f"  {line['sportsbook']}: "
+                f"{line['odds']}"
+            )
+
+        print(
+            f"Line Difference: "
+            f"{report['line_difference']:+}"
+        )
+
+        print(f"Record: {report['record']}")
+        print(f"Run Differential: {report['run_diff']:+}")
+
+        print(
+            f"Trend Score: "
+            f"{report['trend_score']:+.1f}"
+        )
+
+        print(
+            f"Edge Score: "
+            f"{report['edge_score']:+.2f}"
+        )
+
+        print(f"Current Streak: {report['streak']}")
+
+        if report["edge_score"] >= 2:
+            print("Signal: Potential Value Bet")
+
+        elif report["edge_score"] <= -2:
+            print("Signal: Avoid / Cold Team")
+
+        else:
+            print("Signal: Neutral")
 
 
 if __name__ == "__main__":
