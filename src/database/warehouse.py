@@ -121,6 +121,63 @@ def save_odds_snapshot(
     conn.commit()
     conn.close()
 
+def save_model_prediction(
+    external_event_id,
+    sport,
+    home_team,
+    away_team,
+    commence_time,
+    team,
+    sportsbook,
+    odds,
+    trend_score,
+    pitcher_score,
+    edge_score,
+    signal,
+    model_win_probability=None,
+    fair_odds=None
+):
+    game_id = get_or_create_game(
+        external_event_id=external_event_id,
+        sport=sport,
+        home_team=home_team,
+        away_team=away_team,
+        commence_time=commence_time
+    )
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO model_predictions (
+            game_id,
+            team,
+            sportsbook,
+            odds,
+            trend_score,
+            pitcher_score,
+            edge_score,
+            signal,
+            model_win_probability,
+            fair_odds
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        game_id,
+        team,
+        sportsbook,
+        odds,
+        trend_score,
+        pitcher_score,
+        edge_score,
+        signal,
+        model_win_probability,
+        fair_odds
+    ))
+
+    conn.commit()
+    conn.close()
+
 if __name__ == "__main__":
     sportsbook_id = get_or_create_sportsbook("FanDuel")
 

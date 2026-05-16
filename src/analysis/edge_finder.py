@@ -17,6 +17,12 @@ from src.collectors.mlb_pitcher_collector import (
     calculate_pitcher_score,
 )
 from datetime import datetime, timezone
+from src.database.warehouse import save_model_prediction
+from src.analysis.edge_model import estimate_win_probability
+from src.analysis.probability_model import (
+    calculate_market_edge,
+    probability_to_american_odds,
+)
 
 def build_pitcher_lookup(pitcher_data):
 
@@ -146,6 +152,16 @@ def find_edges():
                 recent_bonus,
             )
 
+            model_win_probability = estimate_win_probability(edge_score)
+
+            fair_odds = probability_to_american_odds(
+                model_win_probability
+            )
+            market_edge = calculate_market_edge(
+                model_win_probability,
+                odds
+            )
+
             streak = calculate_streak(stats["results"])
             
             signal = classify_signal(edge_score)
@@ -165,6 +181,14 @@ def find_edges():
                 "signal": signal,
                 "pitcher_name": pitcher_name,
                 "pitcher_score": pitcher_score,
+                "external_event_id": event["id"],
+                "sport": "baseball_mlb",
+                "home_team": home_team,
+                "away_team": away_team,
+                "commence_time": event["commence_time"],
+                "model_win_probability": model_win_probability,
+                "fair_odds": fair_odds,
+                "market_edge": market_edge
             })
 
             
@@ -180,6 +204,21 @@ def find_edges():
 
     for report in edge_reports:
         save_edge_report(report)
+        save_model_prediction(
+            external_event_id=report["external_event_id"],
+            sport=report["sport"],
+            home_team=report["home_team"],
+            away_team=report["away_team"],
+            commence_time=report["commence_time"],
+            team=report["team"],
+            sportsbook=report["sportsbook"],
+            odds=report["odds"],
+            trend_score=report["trend_score"],
+            pitcher_score=report["pitcher_score"],
+            edge_score=report["edge_score"],
+            signal=report["signal"],
+            model_win_probability=report["model_win_probability"]
+        )
         print()
         print(report["event"])
 
@@ -232,5 +271,15 @@ def find_edges():
             print("Signal: Neutral")
 
         return edge_reports
+    
+        print(
+            f"Model Win Probability: {report['model_win_probability']}%"
+        )
+        print(
+            f"Fair Odds: {report['fair_odds']}"
+        )
+        print(
+            f"Market Edge: {report['market_edge']:+.2f}%"
+        )
 if __name__ == "__main__":
     find_edges()

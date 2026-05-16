@@ -45,3 +45,10 @@ def classify_signal(edge_score):
         return "Avoid / Cold Team"
 
     return "Neutral"
+
+def estimate_win_probability(edge_score):
+
+    probability = 50 + (edge_score * 3)
+    probability = max(0, min(99, probability))
+
+    return round(probability, 2)
