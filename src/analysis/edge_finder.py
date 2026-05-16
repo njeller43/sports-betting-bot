@@ -4,25 +4,18 @@ from src.collectors.mlb_stats_collector import (
     get_recent_games,
     calculate_streak,
 )
+from src.analysis.edge_model import (
+    is_better_odds,
+    calculate_recent_bonus,
+    calculate_edge_score,
+    classify_signal
+)
 from src.database.save_edge_reports import save_edge_report
 from src.collectors.mlb_pitcher_collector import (
     get_today_pitchers,
     get_pitcher_stats,
     calculate_pitcher_score,
 )
-
-
-def is_better_odds(new_odds, current_odds):
-    # For positive odds, higher is better: +130 is better than +110
-    if new_odds > 0 and current_odds > 0:
-        return new_odds > current_odds
-
-    # For negative odds, closer to zero is better: -120 is better than -150
-    if new_odds < 0 and current_odds < 0:
-        return new_odds > current_odds
-
-    # Positive odds are generally better than negative odds for payout
-    return new_odds > current_odds
 
 def build_pitcher_lookup(pitcher_data):
 
@@ -128,21 +121,18 @@ def find_edges():
             pitcher_stats = get_pitcher_stats(pitcher_id)
             pitcher_score = calculate_pitcher_score(pitcher_stats)
 
-            edge_score = (
-                trend_score + (odds / 100) + (pitcher_score * 0.5)
+            recent_bonus = calculate_recent_bonus(stats["results"])
+
+            edge_score = calculate_edge_score(
+                trend_score,
+                odds,
+                pitcher_score,
+                recent_bonus,
             )
 
             streak = calculate_streak(stats["results"])
-
-
-
-
-            if edge_score >= 2:
-                signal = "Potential Value Bet"
-            elif edge_score <= -2:
-                signal = "Avoid / Cold Team"
-            else:
-                signal = "Neutral"
+            
+            signal = classify_signal(edge_score)
 
             edge_reports.append({
                 "event": f"{away_team} vs {home_team}",

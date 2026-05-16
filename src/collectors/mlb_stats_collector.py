@@ -1,13 +1,17 @@
 import requests
 
+from datetime import date, timedelta
 
 def get_recent_games(days_back=10):
     url = "https://statsapi.mlb.com/api/v1/schedule"
 
+    end_date = date.today()
+    start_date = end_date - timedelta(days=days_back)
+
     params = {
         "sportId": 1,
-        "startDate": "2026-05-05",
-        "endDate": "2026-05-15"
+        "startDate": start_date.strftime("%Y-%m-%d"),
+        "endDate": end_date.strftime("%Y-%m-%d"),
     }
 
     response = requests.get(url, params=params)
