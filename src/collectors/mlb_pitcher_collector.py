@@ -57,6 +57,25 @@ def get_pitcher_stats(pitcher_id):
         "losses": stats.get("losses"),
     }
 
+def calculate_pitcher_score(stats):
+    if not stats:
+        return 0
+
+    era = float(stats.get("era") or 0)
+    whip = float(stats.get("whip") or 0)
+    strikeouts = int(stats.get("strikeouts") or 0)
+
+    score = 0
+
+    if era > 0:
+        score += max(0, 5 - era)
+
+    if whip > 0:
+        score += max(0, 2 - whip)
+
+    score += strikeouts / 50
+
+    return round(score, 2)
 
 if __name__ == "__main__":
     data = get_today_pitchers()
@@ -88,6 +107,9 @@ if __name__ == "__main__":
             away_stats = get_pitcher_stats(away_pitcher_id)
             home_stats = get_pitcher_stats(home_pitcher_id)
 
+            away_pitcher_score = calculate_pitcher_score(away_stats)
+            home_pitcher_score = calculate_pitcher_score(home_stats)
+
             print()
             print("=" * 60)
             print(f"{away_team} at {home_team}")
@@ -96,7 +118,9 @@ if __name__ == "__main__":
             print()
             print(f"Away Pitcher: {away_pitcher}")
             print(away_stats)
+            print(f"Pitcher Score: {away_pitcher_score}")
 
             print()
             print(f"Home Pitcher: {home_pitcher}")
             print(home_stats)
+            print(f"Pitcher Score: {home_pitcher_score}")

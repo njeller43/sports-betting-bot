@@ -5,6 +5,11 @@ from src.collectors.mlb_stats_collector import (
     calculate_streak,
 )
 from src.database.save_edge_reports import save_edge_report
+from src.collectors.mlb_pitcher_collector import (
+    get_today_pitchers,
+    get_pitcher_stats,
+    calculate_pitcher_score,
+)
 
 
 def is_better_odds(new_odds, current_odds):
@@ -19,11 +24,37 @@ def is_better_odds(new_odds, current_odds):
     # Positive odds are generally better than negative odds for payout
     return new_odds > current_odds
 
+def build_pitcher_lookup(pitcher_data):
+
+    pitcher_lookup = {}
+
+    for date in pitcher_data.get("dates", []):
+        for game in date.get("games", []):
+
+            away_team = game["teams"]["away"]["team"]["name"]
+            home_team = game["teams"]["home"]["team"]["name"]
+
+            away_pitcher = (
+                game["teams"]["away"]
+                .get("probablePitcher", {})
+            )
+
+            home_pitcher = (
+                game["teams"]["home"]
+                .get("probablePitcher", {})
+            )
+
+            pitcher_lookup[away_team] = away_pitcher
+            pitcher_lookup[home_team] = home_pitcher
+
+    return pitcher_lookup
 
 def find_edges():
     odds_data = get_odds_data("baseball_mlb")
     recent_games = get_recent_games()
     trends = calculate_team_trends(recent_games)
+    pitcher_data = get_today_pitchers()
+    pitcher_lookup = build_pitcher_lookup(pitcher_data)
 
     edge_reports = []
 
@@ -89,9 +120,22 @@ def find_edges():
                 + (run_diff / 10)
             )
 
-            edge_score = trend_score + (odds / 100)
+            pitcher_info = pitcher_lookup.get(team, {})
+
+            pitcher_name = pitcher_info.get("fullName", "TBD")
+            pitcher_id = pitcher_info.get("id")
+
+            pitcher_stats = get_pitcher_stats(pitcher_id)
+            pitcher_score = calculate_pitcher_score(pitcher_stats)
+
+            edge_score = (
+                trend_score + (odds / 100) + (pitcher_score * 0.5)
+            )
 
             streak = calculate_streak(stats["results"])
+
+
+
 
             if edge_score >= 2:
                 signal = "Potential Value Bet"
@@ -112,7 +156,9 @@ def find_edges():
                 "trend_score": trend_score,
                 "edge_score": edge_score,
                 "streak": streak,
-                "signal": signal
+                "signal": signal,
+                "pitcher_name": pitcher_name,
+                "pitcher_score": pitcher_score,
             })
 
             
@@ -157,6 +203,10 @@ def find_edges():
         print(
             f"Trend Score: "
             f"{report['trend_score']:+.1f}"
+        )
+
+        print(f"Pitcher: {report['pitcher_name']}")
+        print(f"Pitcher Score: {report['pitcher_score']:+.2f}"
         )
 
         print(
