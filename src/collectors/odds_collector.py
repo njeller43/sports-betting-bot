@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from src.analysis.implied_probability import american_odds_to_probability
 from src.analysis.betting_objects import create_betting_object
 from src.database.db import create_tables, create_collection_run, insert_betting_odds
-
+from src.database.warehouse import save_odds_snapshot
 load_dotenv()
 
 API_KEY = os.getenv("ODDS_API_KEY")
@@ -78,6 +78,18 @@ def display_odds(events, sport):
 
                 for outcome in market['outcomes']:
                     probability = american_odds_to_probability(outcome['price'])
+                    save_odds_snapshot(
+                        external_event_id=event['id'],
+                        sport=sport,
+                        home_team=event['home_team'],
+                        away_team=event['away_team'],
+                        commence_time=event['commence_time'],
+                        sportsbook_name=bookmaker['title'],
+                        team=outcome['name'],
+                        market=market['key'],
+                        odds=outcome['price'],
+                        implied_probability=probability
+                    )
                     betting_object = create_betting_object(
                         sport=sport,
                         event_name=f"{event['home_team']} vs {event['away_team']}",

@@ -74,6 +74,52 @@ def get_or_create_game(
 
     return game_id
 
+def save_odds_snapshot(
+    external_event_id,
+    sport,
+    home_team,
+    away_team,
+    commence_time,
+    sportsbook_name,
+    team,
+    market,
+    odds,
+    implied_probability
+):
+    game_id = get_or_create_game(
+        external_event_id=external_event_id,
+        sport=sport,
+        home_team=home_team,
+        away_team=away_team,
+        commence_time=commence_time
+    )
+
+    sportsbook_id = get_or_create_sportsbook(sportsbook_name)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO odds_snapshots (
+            game_id,
+            sportsbook_id,
+            team,
+            market,
+            odds,
+            implied_probability
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        game_id,
+        sportsbook_id,
+        team,
+        market,
+        odds,
+        implied_probability
+    ))
+
+    conn.commit()
+    conn.close()
 
 if __name__ == "__main__":
     sportsbook_id = get_or_create_sportsbook("FanDuel")
@@ -88,3 +134,4 @@ if __name__ == "__main__":
 
     print(f"Sportsbook ID: {sportsbook_id}")
     print(f"Game ID: {game_id}")
+
