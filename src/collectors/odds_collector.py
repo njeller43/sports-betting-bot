@@ -10,14 +10,16 @@ load_dotenv()
 
 API_KEY = os.getenv("ODDS_API_KEY")
 
-def get_odds_data(sport="baseball_mlb"):
+BOOKMAKERS = ["draftkings", "fanduel", "betmgm", "caesars"]
+
+def get_odds_data(sport="baseball_mlb", bookmaker="draftkings"):
     url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds"
 
     params = {
     "apiKey": API_KEY,
     "regions": "us",
     "markets": "h2h",
-    "bookmakers": "draftkings,fanduel,betmgm,caesars",
+    "bookmakers": bookmaker,
     "oddsFormat": "american"
     }
 
@@ -29,6 +31,32 @@ def get_odds_data(sport="baseball_mlb"):
 
     data = response.json()
     return data           
+
+def get_all_bookmaker_odds(sport="baseball_mlb"):
+    events_by_matchup = {}
+
+    for bookmaker in BOOKMAKERS:
+        print(f"Fetching odds from {bookmaker}...")
+
+        bookmaker_events = get_odds_data(
+            sport=sport,
+            bookmaker=bookmaker
+        )
+
+        for event in bookmaker_events:
+            matchup_key = tuple(sorted([
+                event["home_team"],
+                event["away_team"]
+            ]))
+
+            if matchup_key not in events_by_matchup:
+                events_by_matchup[matchup_key] = event
+            else:
+                events_by_matchup[matchup_key]["bookmakers"].extend(
+                    event.get("bookmakers", [])
+                )
+
+    return list(events_by_matchup.values())
 
 def display_odds(events, sport):
     betting_objects = []
@@ -69,7 +97,7 @@ if __name__ == "__main__":
     run_id = create_collection_run()
 
     sport="baseball_mlb"
-    odds_data = get_odds_data()
+    odds_data = get_all_bookmaker_odds(sport=sport)
     all_bets = display_odds(odds_data, sport)
 
     insert_betting_odds(all_bets, run_id)

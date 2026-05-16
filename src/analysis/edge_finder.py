@@ -1,4 +1,4 @@
-from src.collectors.odds_collector import get_odds_data
+from src.collectors.odds_collector import get_all_bookmaker_odds
 from src.collectors.mlb_stats_collector import (
     calculate_team_trends,
     get_recent_games,
@@ -16,6 +16,7 @@ from src.collectors.mlb_pitcher_collector import (
     get_pitcher_stats,
     calculate_pitcher_score,
 )
+from datetime import datetime, timezone
 
 def build_pitcher_lookup(pitcher_data):
 
@@ -43,7 +44,7 @@ def build_pitcher_lookup(pitcher_data):
     return pitcher_lookup
 
 def find_edges():
-    odds_data = get_odds_data("baseball_mlb")
+    odds_data = get_all_bookmaker_odds("baseball_mlb")
     recent_games = get_recent_games()
     trends = calculate_team_trends(recent_games)
     pitcher_data = get_today_pitchers()
@@ -52,12 +53,25 @@ def find_edges():
     edge_reports = []
 
     for event in odds_data:
+        commence_time = event["commence_time"]
+
+        game_date = datetime.fromisoformat(
+            commence_time.replace("Z", "+00:00")
+        ).date()
+
+        today = datetime.now(timezone.utc).date()
+
+        if game_date != today:
+            continue
+
         home_team = event["home_team"]
         away_team = event["away_team"]
 
         print()
         print("=" * 60)
         print(f"{away_team} vs {home_team}")
+        print(f"Commence Time: {event['commence_time']}")
+        print(f"Event ID: {event['id']}")
         print("=" * 60)
 
         best_lines = {}
@@ -67,6 +81,8 @@ def find_edges():
             sportsbook = bookmaker["title"]
 
             for market in bookmaker["markets"]:
+                if market["key"] != "h2h":
+                    continue
                 for outcome in market["outcomes"]:
                     team = outcome["name"]
                     odds = outcome["price"]
@@ -215,6 +231,6 @@ def find_edges():
         else:
             print("Signal: Neutral")
 
-
+        return edge_reports
 if __name__ == "__main__":
     find_edges()

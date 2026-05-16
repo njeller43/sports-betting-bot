@@ -1,12 +1,13 @@
 def is_better_odds(new_odds, current_odds):
-    if new_odds > 0 and current_odds > 0:
+    if new_odds < 0 and current_odds < 0:
         return new_odds > current_odds
 
-    if new_odds < 0 and current_odds < 0:
+    if new_odds > 0 and current_odds > 0:
         return new_odds > current_odds
 
     return new_odds > current_odds
 
+    return False
 
 def calculate_recent_bonus(results):
     recent_results = results[-3:]
