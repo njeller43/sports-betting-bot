@@ -3,6 +3,7 @@ from src.collectors.mlb_stats_collector import (
     calculate_team_trends,
     get_recent_games,
     calculate_streak,
+    calculate_recent_offense
 )
 from src.analysis.edge_model import (
     is_better_odds,
@@ -22,6 +23,11 @@ from src.analysis.edge_model import estimate_win_probability
 from src.analysis.probability_model import (
     calculate_market_edge,
     probability_to_american_odds,
+)
+from src.collectors.mlb_bullpen_collector import (
+    get_recent_games as get_recent_bullpen_games,
+    calculate_bullpen_fatigue_score,
+    calculate_bullpen_usage
 )
 
 def build_pitcher_lookup(pitcher_data):
@@ -53,6 +59,8 @@ def find_edges():
     odds_data = get_all_bookmaker_odds("baseball_mlb")
     recent_games = get_recent_games()
     trends = calculate_team_trends(recent_games)
+    bullpen_games = get_recent_bullpen_games()
+    bullpen_usage = calculate_bullpen_usage(bullpen_games)
     pitcher_data = get_today_pitchers()
     pitcher_lookup = build_pitcher_lookup(pitcher_data)
 
@@ -128,12 +136,26 @@ def find_edges():
 
             stats = trends[team]
 
+            bullpen_stats = bullpen_usage.get(team, {"bullpen_appearances": 0})
+            bullpen_fatigue_score = calculate_bullpen_fatigue_score(bullpen_stats)
+
             run_diff = stats["runs_scored"] - stats["runs_allowed"]
+            recent_offense = calculate_recent_offense(stats["recent_runs"])
+            offense_bonus = ( recent_offense -4.5) * 0.8
 
             trend_score = (
                 (stats["wins"] - stats["losses"])
                 + (run_diff / 10)
             )
+
+            if team == home_team:
+                split_wins = stats["home_wins"]
+                split_losses = stats["home_losses"]
+            else:
+                split_wins = stats["away_wins"]
+                split_losses = stats["away_losses"]
+
+            home_away_bonus = (split_wins - split_losses) * 0.5
 
             pitcher_info = pitcher_lookup.get(team, {})
 
@@ -146,9 +168,9 @@ def find_edges():
             recent_bonus = calculate_recent_bonus(stats["results"])
 
             edge_score = calculate_edge_score(
-                trend_score,
+                trend_score + home_away_bonus + offense_bonus,
                 odds,
-                pitcher_score,
+                pitcher_score + bullpen_fatigue_score,
                 recent_bonus,
             )
 
@@ -188,7 +210,11 @@ def find_edges():
                 "commence_time": event["commence_time"],
                 "model_win_probability": model_win_probability,
                 "fair_odds": fair_odds,
-                "market_edge": market_edge
+                "market_edge": market_edge,
+                "home_away_bonus": home_away_bonus,
+                "bullpen_fatigue_score": bullpen_fatigue_score,
+                "recent_offense": recent_offense,
+                "offense_bonus": offense_bonus
             })
 
             
@@ -281,5 +307,19 @@ def find_edges():
         print(
             f"Market Edge: {report['market_edge']:+.2f}%"
         )
+
+        print(
+            f"Home/Away Bonus: {report['home_away_bonus']:+.2f}"
+        )
+        print(
+            f"Bullpen Fatigue Score: {report['bullpen_fatigue_score']:+.1f}"
+        )
+        print(
+            f"Recent Offensive Rating: {report['recent_offense']:.2f}"
+        )
+        print(
+            f"Offense Bonus: {report['offense_bonus']:+.2f}"
+        )
+        
 if __name__ == "__main__":
     find_edges()

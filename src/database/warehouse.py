@@ -1,6 +1,5 @@
 from src.database.schema import get_connection, create_schema
 
-
 def get_or_create_sportsbook(name):
     create_schema()
 
@@ -135,7 +134,8 @@ def save_model_prediction(
     edge_score,
     signal,
     model_win_probability=None,
-    fair_odds=None
+    fair_odds=None,
+    market_edge=None
 ):
     game_id = get_or_create_game(
         external_event_id=external_event_id,
@@ -159,9 +159,10 @@ def save_model_prediction(
             edge_score,
             signal,
             model_win_probability,
-            fair_odds
+            fair_odds,
+            market_edge
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         game_id,
         team,
@@ -172,7 +173,8 @@ def save_model_prediction(
         edge_score,
         signal,
         model_win_probability,
-        fair_odds
+        fair_odds,
+        market_edge
     ))
 
     conn.commit()

@@ -90,8 +90,10 @@ def create_schema():
             signal TEXT,
             model_win_probability REAL,
             fair_odds INTEGER,
+            market_edge REAL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (game_id) REFERENCES games(id)
+            
         )
     """)
 
