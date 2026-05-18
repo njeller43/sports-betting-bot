@@ -36,6 +36,19 @@ from src.collectors.weather_collector import (
     calculate_weather_bonus
 )
 
+from datetime import datetime, timedelta, timezone
+
+
+def format_eastern_time(utc_time_string):
+
+    utc_time = datetime.fromisoformat(
+        utc_time_string.replace("Z", "+00:00")
+    )
+
+    eastern_time = utc_time - timedelta(hours=4)
+
+    return eastern_time.strftime("%I:%M %p ET")
+
 def build_pitcher_lookup(pitcher_data):
 
     pitcher_lookup = {}
@@ -90,7 +103,7 @@ def find_edges():
         print()
         print("=" * 60)
         print(f"{away_team} vs {home_team}")
-        print(f"Commence Time: {event['commence_time']}")
+        print(f"Game Time: {format_eastern_time(commence_time)}")
         print(f"Event ID: {event['id']}")
         print("=" * 60)
 

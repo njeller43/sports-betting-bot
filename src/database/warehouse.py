@@ -151,6 +151,7 @@ def save_model_prediction(
     cursor.execute("""
         INSERT INTO model_predictions (
             game_id,
+            commence_time,
             team,
             sportsbook,
             odds,
@@ -162,9 +163,10 @@ def save_model_prediction(
             fair_odds,
             market_edge
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         game_id,
+        commence_time,
         team,
         sportsbook,
         odds,

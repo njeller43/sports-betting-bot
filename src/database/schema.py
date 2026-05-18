@@ -81,6 +81,7 @@ def create_schema():
         CREATE TABLE IF NOT EXISTS model_predictions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             game_id INTEGER,
+            commence_time TEXT,
             team TEXT NOT NULL,
             sportsbook TEXT,
             odds INTEGER,

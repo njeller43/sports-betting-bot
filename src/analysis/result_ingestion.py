@@ -1,7 +1,7 @@
 import requests
 
 from datetime import date, timedelta
-
+from datetime import datetime, timezone
 from src.database.schema import get_connection
 
 
@@ -69,6 +69,7 @@ def get_ungraded_predictions():
     cursor.execute("""
         SELECT
             mp.id,
+            mp.commence_time,
             g.home_team,
             g.away_team,
             mp.team,
@@ -101,6 +102,9 @@ def grade_predictions(completed_games):
 
     predictions = get_ungraded_predictions()
 
+    print(f"Completed Games Found: {len(completed_games)}")
+    print(f"Ungraded Predictions Found: {len(predictions)}")
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -112,12 +116,17 @@ def grade_predictions(completed_games):
 
         (
             prediction_id,
+            commence_time,
             home_team,
             away_team,
             predicted_team,
             odds,
             signal,
         ) = prediction
+
+        prediction_time = datetime.fromisoformat(commence_time.replace("Z", "+00:00"))
+        if prediction_time > datetime.now(timezone.utc):
+            continue
 
         matching_game = None
 
@@ -131,6 +140,9 @@ def grade_predictions(completed_games):
                 break
 
         if not matching_game:
+            print(f"No matching game found")
+            print(f"Prediction: {away_team} vs {home_team}")
+
             continue
 
         total_predictions += 1
