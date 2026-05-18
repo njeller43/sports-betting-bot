@@ -29,6 +29,12 @@ from src.collectors.mlb_bullpen_collector import (
     calculate_bullpen_fatigue_score,
     calculate_bullpen_usage
 )
+from src.analysis.park_factors import calculate_park_factor_bonus
+
+from src.collectors.weather_collector import (
+    get_weather,
+    calculate_weather_bonus
+)
 
 def build_pitcher_lookup(pitcher_data):
 
@@ -143,6 +149,12 @@ def find_edges():
             recent_offense = calculate_recent_offense(stats["recent_runs"])
             offense_bonus = ( recent_offense -4.5) * 0.8
 
+            park_factor_bonus = calculate_park_factor_bonus(
+                home_team)
+            
+            weather = get_weather(home_team)
+            weather_bonus = calculate_weather_bonus(weather)
+
             trend_score = (
                 (stats["wins"] - stats["losses"])
                 + (run_diff / 10)
@@ -168,7 +180,11 @@ def find_edges():
             recent_bonus = calculate_recent_bonus(stats["results"])
 
             edge_score = calculate_edge_score(
-                trend_score + home_away_bonus + offense_bonus,
+                trend_score + 
+                home_away_bonus + 
+                offense_bonus + 
+                park_factor_bonus + 
+                weather_bonus,
                 odds,
                 pitcher_score + bullpen_fatigue_score,
                 recent_bonus,
@@ -214,7 +230,10 @@ def find_edges():
                 "home_away_bonus": home_away_bonus,
                 "bullpen_fatigue_score": bullpen_fatigue_score,
                 "recent_offense": recent_offense,
-                "offense_bonus": offense_bonus
+                "offense_bonus": offense_bonus,
+                "park_factor_bonus": park_factor_bonus,
+                "weather": weather,
+                "weather_bonus": weather_bonus,
             })
 
             
@@ -295,31 +314,43 @@ def find_edges():
 
         else:
             print("Signal: Neutral")
-
-        return edge_reports
     
-        print(
-            f"Model Win Probability: {report['model_win_probability']}%"
-        )
-        print(
-            f"Fair Odds: {report['fair_odds']}"
-        )
-        print(
-            f"Market Edge: {report['market_edge']:+.2f}%"
-        )
+    print(
+        f"Model Win Probability: {report['model_win_probability']}%"
+    )
+    print(
+        f"Fair Odds: {report['fair_odds']}"
+    )
+    print(
+        f"Market Edge: {report['market_edge']:+.2f}%"
+    )
 
-        print(
-            f"Home/Away Bonus: {report['home_away_bonus']:+.2f}"
-        )
-        print(
-            f"Bullpen Fatigue Score: {report['bullpen_fatigue_score']:+.1f}"
-        )
-        print(
-            f"Recent Offensive Rating: {report['recent_offense']:.2f}"
-        )
-        print(
-            f"Offense Bonus: {report['offense_bonus']:+.2f}"
-        )
-        
+    print(
+        f"Home/Away Bonus: {report['home_away_bonus']:+.2f}"
+    )
+    print(
+        f"Bullpen Fatigue Score: {report['bullpen_fatigue_score']:+.1f}"
+    )
+    print(
+        f"Recent Offensive Rating: {report['recent_offense']:.2f}"
+    )
+    print(
+        f"Offense Bonus: {report['offense_bonus']:+.2f}"
+    )
+    print(
+        f"Park Factor Bonus: {report['park_factor_bonus']:+.2f}"
+    )
+
+    print(
+        f"Weather: "
+        f"{report['weather']['temperature']}°F, "
+        f"Wind {report['weather']['wind_speed']} mph"
+    )
+
+    print(
+        f"Weather Bonus: {report['weather_bonus']:+.2f}"
+    )
+
+    return edge_reports
 if __name__ == "__main__":
     find_edges()
